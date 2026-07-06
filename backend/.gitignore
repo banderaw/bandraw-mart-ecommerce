@@ -1,0 +1,52 @@
+# ===== PYTHON =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv*
+
+# ===== DATABASE =====
+*.sqlite3
+db.sqlite3
+*.db
+*.sqlite
+
+# ===== DJANGO =====
+*.log
+local_settings.py
+media/
+staticfiles/
+static/
+*.pid
+*.seed
+
+# ===== ENVIRONMENT VARIABLES =====
+.env
+.env.local
+.env.*.local
+*.env
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+*.iml
+.venv/
+
+# ===== TESTING =====
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+*.cover
+*.py,cover
+.coverage.*
