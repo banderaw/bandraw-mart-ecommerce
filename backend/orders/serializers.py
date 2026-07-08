@@ -8,6 +8,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ['id', 'product', 'product_name', 'product_image', 'quantity', 'price', 'total_price']
+        read_only_fields = ['id', 'product', 'product_name', 'product_image', 'quantity', 'price', 'total_price']
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
@@ -19,10 +20,12 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'order_number', 'user', 'username', 'user_email', 'total_amount',
                  'shipping_cost', 'tax', 'status', 'payment_status', 'shipping_address',
                  'billing_address', 'phone', 'notes', 'items', 'created_at', 'updated_at']
-        read_only_fields = ['user', 'order_number', 'total_amount']
+        read_only_fields = ['id', 'user', 'username', 'user_email', 'order_number', 'total_amount',
+                            'shipping_cost', 'tax', 'status', 'payment_status', 'items',
+                            'created_at', 'updated_at']
 
 class CreateOrderSerializer(serializers.Serializer):
-    shipping_address = serializers.CharField(required=True)
-    billing_address = serializers.CharField(required=False, allow_blank=True)
-    phone = serializers.CharField(required=True)
-    notes = serializers.CharField(required=False, allow_blank=True)
+    shipping_address = serializers.CharField(required=True, max_length=500, trim_whitespace=True)
+    billing_address = serializers.CharField(required=False, allow_blank=True, max_length=500, trim_whitespace=True)
+    phone = serializers.CharField(required=True, max_length=20, trim_whitespace=True)
+    notes = serializers.CharField(required=False, allow_blank=True, max_length=1000, trim_whitespace=True)

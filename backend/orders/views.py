@@ -5,8 +5,11 @@ from rest_framework.response import Response
 from django.db import transaction
 from .models import Order, OrderItem
 from .serializers import OrderSerializer, CreateOrderSerializer
-from carts.models import Cart
+from carts.models import Cart, CartItem
+from products.models import Product
 from decimal import Decimal 
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @transaction.atomic
@@ -21,15 +24,19 @@ def checkout(request):
     except Cart.DoesNotExist:
         return Response({'error': 'Cart not found'}, status=status.HTTP_404_NOT_FOUND)
     
-    cart_items = cart.items.all()
+    cart_items = CartItem.objects.select_for_update().select_related('product').filter(cart=cart)
     if not cart_items.exists():
         return Response({'error': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
     
+    product_ids = [item.product_id for item in cart_items]
+    products = Product.objects.select_for_update().in_bulk(product_ids)
+
     # Check stock
     for item in cart_items:
-        if item.product.stock < item.quantity:
+        product = products[item.product_id]
+        if product.stock < item.quantity:
             return Response({
-                'error': f'Not enough stock for {item.product.name}. Available: {item.product.stock}'
+                'error': f'Not enough stock for {product.name}. Available: {product.stock}'
             }, status=status.HTTP_400_BAD_REQUEST)
     
     # Calculate totals
@@ -57,13 +64,14 @@ def checkout(request):
     for item in cart_items:
         OrderItem.objects.create(
             order=order,
-            product=item.product,
+            product=products[item.product_id],
             quantity=item.quantity,
-            price=item.product.final_price
+            price=products[item.product_id].final_price
         )
         # Reduce stock
-        item.product.stock -= item.quantity
-        item.product.save()
+        product = products[item.product_id]
+        product.stock -= item.quantity
+        product.save(update_fields=['stock'])
     
     # Clear cart
     cart_items.delete()
@@ -106,7 +114,7 @@ def cancel_order(request, order_id):
     # Restore stock
     for item in order.items.all():
         item.product.stock += item.quantity
-        item.product.save()
+        item.product.save(update_fields=['stock'])
     
     order.status = 'cancelled'
     order.save()

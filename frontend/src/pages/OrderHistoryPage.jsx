@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getMyOrders } from '../services/orderService';
 
 function OrderHistoryPage() {
     const [orders, setOrders] = useState([]);
@@ -12,21 +13,10 @@ function OrderHistoryPage() {
 
     const fetchOrders = async () => {
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/orders/my-orders/', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setOrders(data);
-            } else {
-                setError('Failed to fetch orders');
-            }
+            const data = await getMyOrders();
+            setOrders(data);
         } catch (error) {
-            setError('Network error');
+            setError(error.error || 'Failed to fetch orders');
         } finally {
             setLoading(false);
         }

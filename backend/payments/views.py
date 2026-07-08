@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.conf import settings
 from .models import Payment
 from .serializers import PaymentSerializer, CreatePaymentSerializer
 from orders.models import Order
@@ -70,6 +71,9 @@ def order_payments(request, order_id):
 @permission_classes([IsAuthenticated])
 def simulate_payment(request, payment_id):
     """Simulate successful payment (for testing)"""
+    if not settings.DEBUG and not request.user.is_staff:
+        return Response({'error': 'Payment simulation is disabled.'}, status=status.HTTP_403_FORBIDDEN)
+
     try:
         payment = Payment.objects.get(id=payment_id, user=request.user)
     except Payment.DoesNotExist:

@@ -22,9 +22,17 @@ export const login = async (credentials) => {
     }
 };
 
-export const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+export const logout = async () => {
+    const refresh = localStorage.getItem('refresh_token');
+
+    try {
+        if (refresh) {
+            await api.post('/auth/logout/', { refresh });
+        }
+    } finally {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+    }
 };
 
 export const getProfile = async () => {

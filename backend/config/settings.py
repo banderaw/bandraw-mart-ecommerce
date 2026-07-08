@@ -1,13 +1,37 @@
 from pathlib import Path
 from datetime import timedelta
+import os
+
+
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def env_list(name, default=None):
+    value = os.environ.get(name)
+    if not value:
+        return default or []
+    return [item.strip() for item in value.split(',') if item.strip()]
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE = BASE_DIR / '.env'
 
-SECRET_KEY = 'django-insecure-d38q=!#0^re%*r4w^682_09j!f9e^p0^evtc#$+5fm3z^87a20'
+if ENV_FILE.exists():
+    for line in ENV_FILE.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
-DEBUG = True
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'unsafe-dev-key-change-before-production')
 
-ALLOWED_HOSTS = ['*']
+DEBUG = env_bool('DJANGO_DEBUG', True)
+
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -18,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'accounts',
     'products',
@@ -88,15 +113,40 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', DEBUG)
+CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+])
+CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': os.environ.get('DRF_ANON_THROTTLE_RATE', '100/hour'),
+        'user': os.environ.get('DRF_USER_THROTTLE_RATE', '1000/hour'),
+    },
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
 }
+
+SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)
+CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', not DEBUG)
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', False)
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0' if DEBUG else '31536000'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', not DEBUG)
+SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', not DEBUG)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'

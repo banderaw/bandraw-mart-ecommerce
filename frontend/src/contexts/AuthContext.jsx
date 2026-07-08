@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(userData);
                 setIsAuth(true);
             } catch (error) {
-                logoutService();
+                await logoutService();
                 setUser(null);
                 setIsAuth(false);
             }
@@ -27,8 +27,8 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     };
 
-    const logout = () => {
-        logoutService();
+    const logout = async () => {
+        await logoutService();
         setUser(null);
         setIsAuth(false);
     };

@@ -2,6 +2,9 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
+from django.db import IntegrityError
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from .serializers import RegisterSerializer, UserSerializer, ProfileSerializer
 from .models import Profile
 
@@ -14,44 +17,48 @@ class ProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
-        try:
-            # Get or create profile
-            profile, created = Profile.objects.get_or_create(user=request.user)
-            serializer = UserSerializer(request.user)
-            return Response(serializer.data)
-        except Exception as e:
-            return Response(
-                {'error': str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        Profile.objects.get_or_create(user=request.user)
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
     
     def put(self, request):
+        user = request.user
+        email = request.data.get('email')
+
+        if email and User.objects.exclude(id=user.id).filter(email__iexact=email).exists():
+            return Response({'email': 'A user with this email already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.first_name = request.data.get('first_name', user.first_name)
+        user.last_name = request.data.get('last_name', user.last_name)
+        user.email = email if email is not None else user.email
+
+        profile, created = Profile.objects.get_or_create(user=user)
+        profile_data = request.data.get('profile', {})
+        profile_serializer = ProfileSerializer(profile, data=profile_data, partial=True)
+        profile_serializer.is_valid(raise_exception=True)
+
         try:
-            user = request.user
-            
-            # Update user fields
-            user.first_name = request.data.get('first_name', user.first_name)
-            user.last_name = request.data.get('last_name', user.last_name)
-            user.email = request.data.get('email', user.email)
             user.save()
-            
-            # Update profile
-            profile, created = Profile.objects.get_or_create(user=user)
-            profile_data = request.data.get('profile', {})
-            
-            if profile_data:
-                profile.phone = profile_data.get('phone', profile.phone or '')
-                profile.address = profile_data.get('address', profile.address or '')
-                profile.city = profile_data.get('city', profile.city or '')
-                profile.country = profile_data.get('country', profile.country or 'Ethiopia')
-                profile.save()
-            
-            # Return updated user data
-            serializer = UserSerializer(user)
-            return Response(serializer.data)
-            
-        except Exception as e:
-            return Response(
-                {'error': str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            profile_serializer.save()
+        except IntegrityError:
+            return Response({'error': 'Profile could not be updated.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response({'refresh': 'This field is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except TokenError:
+            return Response({'refresh': 'Invalid refresh token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

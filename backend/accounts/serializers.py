@@ -8,6 +8,12 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['id', 'phone', 'address', 'city', 'country', 'profile_picture']
         read_only_fields = ['id']
+        extra_kwargs = {
+            'phone': {'max_length': 15, 'allow_blank': True},
+            'address': {'max_length': 500, 'allow_blank': True},
+            'city': {'max_length': 100, 'allow_blank': True},
+            'country': {'max_length': 100, 'allow_blank': True},
+        }
 
 class UserSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(read_only=True)  # Make it read-only
@@ -29,6 +35,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
+        email = attrs.get('email')
+        if email and User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError({"email": "A user with this email already exists."})
         return attrs
     
     def create(self, validated_data):
@@ -44,13 +53,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         
-        # Create profile
-        Profile.objects.create(
-            user=user,
-            phone=profile_data.get('phone', ''),
-            address=profile_data.get('address', ''),
-            city=profile_data.get('city', ''),
-            country=profile_data.get('country', 'Ethiopia')
-        )
+        profile, created = Profile.objects.get_or_create(user=user)
+        profile.phone = profile_data.get('phone', '')
+        profile.address = profile_data.get('address', '')
+        profile.city = profile_data.get('city', '')
+        profile.country = profile_data.get('country', 'Ethiopia')
+        profile.save()
         
         return user

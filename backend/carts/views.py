@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import Cart, CartItem
-from .serializers import CartSerializer
+from .serializers import AddToCartSerializer, CartSerializer, RemoveCartItemSerializer, UpdateCartItemSerializer
 from products.models import Product
 
 @api_view(['GET'])
@@ -18,8 +18,10 @@ def get_cart(request):
 @permission_classes([IsAuthenticated])
 def add_to_cart(request):
     """Add product to cart"""
-    product_id = request.data.get('product_id')
-    quantity = int(request.data.get('quantity', 1))
+    input_serializer = AddToCartSerializer(data=request.data)
+    input_serializer.is_valid(raise_exception=True)
+    product_id = input_serializer.validated_data['product_id']
+    quantity = input_serializer.validated_data['quantity']
     
     try:
         product = Product.objects.get(id=product_id, is_active=True)
@@ -47,8 +49,10 @@ def add_to_cart(request):
 @permission_classes([IsAuthenticated])
 def update_cart_item(request):
     """Update quantity of cart item"""
-    cart_item_id = request.data.get('cart_item_id')
-    quantity = int(request.data.get('quantity', 1))
+    input_serializer = UpdateCartItemSerializer(data=request.data)
+    input_serializer.is_valid(raise_exception=True)
+    cart_item_id = input_serializer.validated_data['cart_item_id']
+    quantity = input_serializer.validated_data['quantity']
     
     try:
         cart_item = CartItem.objects.get(id=cart_item_id, cart__user=request.user)
@@ -73,7 +77,9 @@ def update_cart_item(request):
 @permission_classes([IsAuthenticated])
 def remove_from_cart(request):
     """Remove item from cart"""
-    cart_item_id = request.data.get('cart_item_id')
+    input_serializer = RemoveCartItemSerializer(data=request.data)
+    input_serializer.is_valid(raise_exception=True)
+    cart_item_id = input_serializer.validated_data['cart_item_id']
     
     try:
         cart_item = CartItem.objects.get(id=cart_item_id, cart__user=request.user)

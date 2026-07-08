@@ -1,122 +1,122 @@
+# Bandraw Mart - E-Commerce Website
 
+A full e-commerce website built with Django REST Framework and React.
 
-# 🛒 Bandraw Mart - E-Commerce Website
+## What This Project Does
 
-A full e-commerce website built with Django and React.
+This is an online store where users can:
 
-##  What This Project Does
-
-This is a complete online store where users can:
-- Create accounts and login
+- Create accounts and log in
 - Browse products
 - Add items to cart
 - Save products to wishlist
 - Place orders
 - View order history
-- Update profile
+- Update their profile
 
-## 🛠️ Technologies Used
+## Technologies Used
 
-**Backend:**
+Backend:
+
 - Django
 - Django REST Framework
-- JWT for authentication
-- SQLite database
+- Simple JWT authentication
+- SQLite for local development
 
-**Frontend:**
+Frontend:
+
 - React
 - Tailwind CSS
-- React Router for navigation
-- Axios for API calls
+- React Router
+- Axios
 
-## 🚀 How to Run
+## How to Run
 
 ### Step 1: Run Backend
 
-Open terminal in `backend` folder:
+Open a terminal in the `backend` folder:
 
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate        # Windows
-# OR
-source venv/bin/activate     # Mac/Linux
-
+venv\Scripts\activate
 pip install -r requirements.txt
+copy .env.example .env
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Backend will run at: `http://127.0.0.1:8000`
+Backend will run at `http://127.0.0.1:8000`.
+
+For Mac/Linux, use:
+
+```bash
+source venv/bin/activate
+cp .env.example .env
+```
 
 ### Step 2: Run Frontend
 
-Open a new terminal in `frontend` folder:
+Open a new terminal in the `frontend` folder:
 
 ```bash
 cd frontend
 npm install
+copy .env.example .env
 npm start
 ```
 
-Frontend will run at: `http://localhost:3000`
+Frontend will run at `http://localhost:3000`.
 
 ### Step 3: Admin Panel
 
-Go to: `http://127.0.0.1:8000/admin`
-Login with the superuser account you created.
+Go to `http://127.0.0.1:8000/admin` and log in with the superuser account you created.
 
-## 📁 Project Structure
+## Security Added
 
-```
+- Django secret key, debug mode, allowed hosts, CORS, and secure cookie settings are configured with environment variables.
+- CORS and allowed hosts are no longer open to every domain by default.
+- JWT access tokens expire faster, refresh tokens rotate, and old refresh tokens are blacklisted.
+- API throttling is enabled for anonymous and authenticated users.
+- Profile, cart, checkout, and payment inputs are validated before saving.
+- Checkout locks cart and product rows during stock updates to reduce overselling.
+- Test payment simulation is blocked in production unless the user is staff.
+- Logout blacklists refresh tokens on the server before clearing browser tokens.
+- Internal exception messages are no longer returned from the profile API.
+
+## Project Structure
+
+```text
 backend/
-├── accounts/          # Login, Register, Profile
-├── products/          # Products and Categories
-├── carts/            # Shopping Cart
-├── orders/           # Orders and Checkout
-├── payments/         # Payment Tracking
-└── config/           # Django Settings
+  accounts/      Login, register, and profile APIs
+  products/      Products and categories
+  carts/         Shopping cart
+  orders/        Orders and checkout
+  payments/      Payment tracking
+  config/        Django settings and URLs
 
 frontend/
-├── src/
-│   ├── components/   # All React Components
-│   ├── pages/        # Pages (Home, Products, Cart)
-│   ├── contexts/     # Global State
-│   └── services/     # API Calls
-└── public/           # Static Files
+  src/
+    components/  React components
+    pages/       Page views
+    contexts/    Global state
+    services/    API calls
+  public/        Static files
 ```
 
-## 🔑 Default Admin
+## Deployment Notes
 
-After running `createsuperuser`, use:
-- Username: admin
-- Password: admin123
+Before deploying:
 
-## 📱 Features
+1. Set a strong `DJANGO_SECRET_KEY`.
+2. Set `DJANGO_DEBUG=False`.
+3. Set `DJANGO_ALLOWED_HOSTS` to your real domain names.
+4. Set `CORS_ALLOWED_ORIGINS` to your frontend domain.
+5. Enable secure cookies and HTTPS settings.
+6. Use a production database such as PostgreSQL.
+7. Do not commit `.env`, `db.sqlite3`, uploaded media, or admin credentials.
 
-- ✅ User Registration & Login
-- ✅ Product Listing with Search
-- ✅ Category Filter
-- ✅ Add to Cart
-- ✅ Wishlist
-- ✅ Checkout
-- ✅ Order History
-- ✅ Profile Update
-
-## 👨‍💻 Developer
+## Developer
 
 Bandraw Mart
-
-
-## 💡 Note 
-
-After cloning, they should:
-1. Delete the existing `db.sqlite3` file (if any)
-2. Run migrations to create their own database
-3. Create their own superuser
-4. Run both backend and frontend
-
----
-
-*Made with  by Bandraw Mart*

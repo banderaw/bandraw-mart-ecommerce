@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import { checkout } from '../services/orderService';
 
 function CheckoutPage() {
     const { cart, clearAll } = useCart();
@@ -40,43 +41,26 @@ function CheckoutPage() {
         }
 
         try {
-            const token = localStorage.getItem('access_token');
-            
-            const response = await fetch('http://127.0.0.1:8000/api/orders/checkout/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    shipping_address: formData.shipping_address,
-                    phone: formData.phone,
-                    notes: formData.notes || ''
-                })
+            await checkout({
+                shipping_address: formData.shipping_address,
+                phone: formData.phone,
+                notes: formData.notes || ''
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                toast.success('Order placed successfully! 🎉');
-                await clearAll();
-                navigate('/orders');
-            } else {
-                // Show specific error messages
-                if (data.error) {
-                    toast.error(data.error);
-                } else if (data.shipping_address) {
-                    toast.error('Shipping address: ' + data.shipping_address[0]);
-                } else if (data.phone) {
-                    toast.error('Phone: ' + data.phone[0]);
-                } else {
-                    toast.error('Checkout failed. Please check your details.');
-                }
-                console.error('Checkout error:', data);
-            }
+            toast.success('Order placed successfully! 🎉');
+            await clearAll();
+            navigate('/orders');
         } catch (error) {
-            console.error('Network error:', error);
-            toast.error('Network error. Please try again.');
+            if (error.error) {
+                toast.error(error.error);
+            } else if (error.shipping_address) {
+                toast.error('Shipping address: ' + error.shipping_address[0]);
+            } else if (error.phone) {
+                toast.error('Phone: ' + error.phone[0]);
+            } else {
+                toast.error('Checkout failed. Please check your details.');
+            }
+            console.error('Checkout error:', error);
         } finally {
             setLoading(false);
         }
