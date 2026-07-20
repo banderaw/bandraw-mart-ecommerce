@@ -21,14 +21,7 @@ function ProductsPage() {
     const fetchProducts = async (search, category) => {
         try {
             setLoading(true);
-            let url = '/products/';
-            const params = new URLSearchParams();
-            if (search) params.append('search', search);
-            if (category) params.append('category', category);
-            if (params.toString()) url += `?${params.toString()}`;
-            
-            const response = await fetch(`http://127.0.0.1:8000/api${url}`);
-            const data = await response.json();
+            const data = await getProducts(search);
             setProducts(data);
         } catch (err) {
             setError('Failed to load products');

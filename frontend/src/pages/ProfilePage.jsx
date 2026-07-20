@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getProfile } from '../services/authService';
+import api from '../services/api';
 import { toast } from 'react-hot-toast';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
@@ -69,16 +70,8 @@ function ProfilePage() {
         e.preventDefault();
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-            if (response.ok) {
+            const response = await api.put('/auth/profile/', formData);
+            if (response.status === 200) {
                 toast.success('Profile updated successfully!');
                 await fetchProfile();
             } else {
