@@ -29,7 +29,7 @@ if ENV_FILE.exists():
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'unsafe-dev-key-change-before-production')
-DEBUG = env_bool('DJANGO_DEBUG', True)
+DEBUG = env_bool('DJANGO_DEBUG', False)
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
 
 INSTALLED_APPS = [
