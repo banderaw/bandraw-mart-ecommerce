@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+import dj_database_url
 
 
 def env_bool(name, default=False):
@@ -28,9 +29,12 @@ if ENV_FILE.exists():
         key, value = line.split('=', 1)
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'unsafe-dev-key-change-before-production')
-DEBUG = env_bool('DJANGO_DEBUG', False)
-ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
+SECRET_KEY = os.environ.get('SECRET_KEY') or os.environ.get('DJANGO_SECRET_KEY', 'unsafe-dev-key-change-before-production')
+DEBUG = env_bool('DJANGO_DEBUG', env_bool('DEBUG', True))
+DEFAULT_ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
+    DEFAULT_ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
+ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', env_list('ALLOWED_HOSTS', DEFAULT_ALLOWED_HOSTS))
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -81,12 +85,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -120,6 +134,8 @@ CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', DEBUG)
 CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'https://localhost:3000',
+    'https://127.0.0.1:3000',
 ])
 CORS_ALLOW_CREDENTIALS = True
 
@@ -147,7 +163,17 @@ SIMPLE_JWT = {
 
 SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)
 CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', not DEBUG)
-SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', False)
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', not DEBUG)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', [
+    'https://bandraw-mart-backend.onrender.com',
+    'https://*.onrender.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://localhost:3000',
+    'https://127.0.0.1:3000',
+])
 SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0' if DEBUG else '31536000'))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', not DEBUG)
 SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', not DEBUG)
