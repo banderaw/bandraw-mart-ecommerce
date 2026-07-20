@@ -37,7 +37,8 @@ if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
 DEFAULT_ALLOWED_HOSTS.extend([
     'bandraw-mart-ecommerce.onrender.com',
     'bandraw-mart-backend.onrender.com',
-    '*.onrender.com',
+    '.onrender.com',
+    'onrender.com',
 ])
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', env_list('ALLOWED_HOSTS', DEFAULT_ALLOWED_HOSTS))
 
