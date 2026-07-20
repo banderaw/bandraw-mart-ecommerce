@@ -31,9 +31,14 @@ if ENV_FILE.exists():
 
 SECRET_KEY = os.environ.get('SECRET_KEY') or os.environ.get('DJANGO_SECRET_KEY', 'unsafe-dev-key-change-before-production')
 DEBUG = env_bool('DJANGO_DEBUG', env_bool('DEBUG', True))
-DEFAULT_ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+DEFAULT_ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0']
 if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
     DEFAULT_ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
+DEFAULT_ALLOWED_HOSTS.extend([
+    'bandraw-mart-ecommerce.onrender.com',
+    'bandraw-mart-backend.onrender.com',
+    '*.onrender.com',
+])
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', env_list('ALLOWED_HOSTS', DEFAULT_ALLOWED_HOSTS))
 
 INSTALLED_APPS = [
