@@ -16,6 +16,7 @@ def env_list(name, default=None):
         return default or []
     return [item.strip() for item in value.split(',') if item.strip()]
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = BASE_DIR / '.env'
 
@@ -28,9 +29,7 @@ if ENV_FILE.exists():
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'unsafe-dev-key-change-before-production')
-
 DEBUG = env_bool('DJANGO_DEBUG', True)
-
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
 
 INSTALLED_APPS = [
@@ -53,6 +52,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ ADDED
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -109,6 +109,9 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # ✅ ADDED
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # ✅ ADDED
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
